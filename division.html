@@ -1,0 +1,652 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Зал Деления — Магическая академия</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-database-compat.min.js"></script>
+
+<style>
+/* ============ БАЗА ============ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;font-family:'Nunito',system-ui,sans-serif;color:#e9e4ff;
+  background:
+    radial-gradient(1100px 750px at 50% -12%, #4a2385 0%, rgba(74,35,133,0) 62%),
+    radial-gradient(900px 700px at 92% 12%, #123a5e 0%, rgba(18,58,94,0) 60%),
+    radial-gradient(800px 800px at 6% 85%, #3a0f52 0%, rgba(58,15,82,0) 60%),
+    linear-gradient(170deg, #12072b 0%, #1a0b3d 35%, #0d1030 70%, #05030f 100%);
+  background-attachment:fixed;overflow-x:hidden;padding-bottom:110px;
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 6px 1px rgba(255,255,255,.85);animation:twinkle 3s infinite ease-in-out;opacity:.7}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:1;transform:scale(1.25)}}
+
+.screen{position:relative;z-index:2}
+.hidden{display:none !important}
+
+/* ============ ШАПКА ============ */
+header{position:relative;z-index:2;text-align:center;padding:22px 16px 6px}
+.header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;max-width:880px;margin:0 auto 8px;padding:0 16px}
+.header-top h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(16px,3.2vw,26px);margin:0;letter-spacing:.02em;
+  background:linear-gradient(100deg,#ffd76a,#fff3c4 35%,#ffcf5c 55%,#e0a3ff 80%,#2ee6d6);
+  -webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.2}
+.user-info{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.nick-badge{font-size:13px;font-weight:800;color:#ffe8b0;background:rgba(255,207,92,.13);
+  border:1px solid rgba(255,207,92,.4);padding:6px 12px;border-radius:12px;white-space:nowrap}
+.btn.tiny{padding:7px 14px;font-size:12px;border-radius:11px;text-decoration:none;display:inline-block}
+.btn.back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(160,130,255,.38);color:#e8dfff;cursor:pointer;font-family:'Nunito';font-weight:900}
+.btn.back-btn:hover{border-color:#ffcf5c;color:#fff;box-shadow:0 0 15px rgba(255,207,92,.3)}
+
+/* ============ МЕНЮ ВЫБОРА ============ */
+#menuScreen{max-width:880px;margin:0 auto;padding:20px 16px;animation:cardIn .5s ease}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
+.menu-card{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+  border:1.5px solid rgba(160,130,255,.3);border-radius:20px;padding:24px 20px;cursor:pointer;
+  transition:.25s;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.menu-card:hover{transform:translateY(-5px);border-color:#ffcf5c;box-shadow:0 12px 30px rgba(255,207,92,.2)}
+.menu-card .icon{font-size:36px;margin-bottom:10px;filter:drop-shadow(0 0 10px rgba(255,255,255,.4))}
+.menu-card h3{font-family:'Cinzel',serif;font-size:18px;margin:0 0 6px;color:#ffe8b0}
+.menu-card p{font-size:13px;color:#b9a9e8;margin:0;font-weight:700;line-height:1.4}
+
+/* ============ КАРТОЧКА ============ */
+main{position:relative;z-index:2;max-width:880px;margin:0 auto;padding:0 16px}
+.scroll-card{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.028));
+  border:1.5px solid rgba(255,207,92,.36);border-radius:26px;padding:24px 20px 22px;
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  box-shadow:0 0 46px rgba(120,80,255,.22),0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.12);
+  animation:cardIn .4s cubic-bezier(.22,1,.36,1)}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+
+/* ============ СЕТКА ДЕЛЕНИЯ ============ */
+.division-container {
+  display: flex; justify-content: center; overflow-x: auto; padding: 20px 0;
+}
+.division-grid {
+  display: grid; 
+  gap: 2px; 
+  justify-content: center;
+  background: rgba(0,0,0,0.1);
+  padding: 10px;
+  border-radius: 12px;
+}
+.div-cell {
+  display: flex; align-items: center; justify-content: center;
+  font-size: clamp(20px, 4.5vw, 32px); font-weight: 900;
+  width: clamp(32px, 6.5vw, 46px); height: clamp(40px, 8vw, 54px);
+  color: #e9e4ff;
+}
+.div-cell input {
+  width: 100%; height: 100%; padding: 0; margin: 0;
+  font-family: 'Nunito', sans-serif; font-size: inherit;
+  font-weight: 900; text-align: center; color: #ffcf5c;
+  background: rgba(10,6,28,0.8); border: 2px solid rgba(160,130,255,0.4);
+  border-radius: 8px; outline: none; transition: 0.2s;
+}
+.div-cell input:focus {
+  border-color: #ffcf5c; box-shadow: 0 0 15px rgba(255,207,92,0.5);
+  background: rgba(10,6,28,1);
+}
+.div-cell input.wrong-border { border-color: #ff9ec4; box-shadow: 0 0 10px rgba(255,79,150,0.4); }
+.div-cell input.correct-border { border-color: #a6ff4d; box-shadow: 0 0 10px rgba(166,255,77,0.4); }
+.div-cell.static-text { color: #8b7fbd; }
+.div-line-v { border-left: 3px solid #ffcf5c; border-radius: 2px; height: 100%; width: 100%; display: block; }
+.div-line-h { height: 4px; background: #ffcf5c; border-radius: 2px; margin-top: auto; margin-bottom: auto; width: 100%; display: block; }
+.div-minus { color: #ffcf5c; font-size: clamp(24px, 5vw, 36px); }
+
+/* ============ КНОПКИ И ТЕКСТ ============ */
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:24px}
+.btn{font-family:'Nunito',sans-serif;font-weight:900;font-size:15px;padding:13px 22px;border-radius:16px;
+  cursor:pointer;color:#e8dfff;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(160,130,255,.38);transition:.22s}
+.btn:hover:not(:disabled){transform:translateY(-2px);color:#fff;border-color:rgba(255,207,92,.65);box-shadow:0 0 22px rgba(255,207,92,.3)}
+.btn.primary{background:linear-gradient(135deg,#ffcf5c,#ffa63c 55%,#ff7ad9);color:#2b1700;border:none;
+  box-shadow:0 0 26px rgba(255,175,60,.5),0 8px 20px rgba(0,0,0,.35)}
+.btn.primary:hover:not(:disabled){color:#2b1700;box-shadow:0 0 38px rgba(255,190,90,.8),0 10px 24px rgba(0,0,0,.4)}
+.btn.ghost{background:rgba(46,230,214,.09);border-color:rgba(46,230,214,.4);color:#8cf5ea}
+.btn.ghost:hover:not(:disabled){border-color:#2ee6d6;box-shadow:0 0 22px rgba(46,230,214,.4)}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none}
+
+.feedback{text-align:center;font-weight:800;font-size:16px;margin-top:14px;min-height:24px;line-height:1.45;transition:.3s}
+.feedback.ok{color:#a6ff4d;text-shadow:0 0 18px rgba(166,255,77,.6)}
+.feedback.bad{color:#ff9ec4;text-shadow:0 0 18px rgba(255,79,150,.45)}
+
+/* ============ РАЗБОР ============ */
+.steps-panel{margin-top:22px;background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+  border:1.5px solid rgba(46,230,214,.32);border-radius:24px;padding:20px 16px 18px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 0 40px rgba(46,230,214,.13),0 16px 40px rgba(0,0,0,.4);transition:.35s}
+.steps-panel h2{font-family:'Cinzel',serif;font-size:clamp(16px,3.2vw,21px);margin:0 0 16px;text-align:center;
+  color:#8cf5ea;letter-spacing:.04em;text-shadow:0 0 20px rgba(46,230,214,.45)}
+.step-card{background:rgba(12,7,32,.58);border:1.5px solid rgba(160,130,255,.28);border-radius:18px;
+  padding:16px;margin-bottom:12px;animation:stepIn .5s cubic-bezier(.22,1,.36,1) both;
+  box-shadow:0 6px 20px rgba(0,0,0,.3); font-size:15px; line-height: 1.6;}
+@keyframes stepIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.label-box { margin-bottom: 10px; padding: 10px 14px; border-radius: 10px; background: rgba(255,255,255,0.05); font-weight: 700;}
+.label-box span { font-weight: 900; color: #ffcf5c; }
+.label-box.divide { border-left: 4px solid #5abeff; }
+.label-box.divider { border-left: 4px solid #b278ff; }
+.label-box.quotient { border-left: 4px solid #ffcf5c; }
+.label-box.remainder { border-left: 4px solid #a6ff4d; }
+
+/* ============ ФУТЕР ============ */
+footer{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:8px;justify-content:center;
+  align-items:center;flex-wrap:wrap;padding:11px 12px;
+  background:linear-gradient(0deg,rgba(5,3,15,.97),rgba(10,5,28,.85) 70%,rgba(10,5,28,0));
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(160,130,255,.2)}
+.stat{font-size:12.5px;font-weight:800;color:#a99bd6;background:rgba(255,255,255,.055);
+  border:1px solid rgba(160,130,255,.22);padding:6px 12px;border-radius:12px;white-space:nowrap}
+.stat b{color:#ffcf5c;font-size:14px}
+
+.toast{position:fixed;left:50%;top:22%;transform:translate(-50%,-24px) scale(.9);z-index:60;pointer-events:none;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(16px,3.6vw,25px);
+  padding:16px 28px;border-radius:20px;color:#2b1700;
+  background:linear-gradient(135deg,#ffe9a8,#ffcf5c 45%,#ff9ee0);
+  box-shadow:0 0 44px rgba(255,207,92,.75),0 14px 40px rgba(0,0,0,.45);
+  opacity:0;transition:.35s cubic-bezier(.22,1,.36,1);text-align:center;max-width:88vw;}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1);}
+
+@media(max-width:560px){
+  .scroll-card{padding:18px 12px 16px;border-radius:20px}
+  .btn{padding:12px 16px;font-size:14px}
+  .stat{font-size:11px;padding:5px 9px}
+  .div-cell { width: 28px; height: 36px; font-size: 18px; }
+  .div-cell input { font-size: 18px; }
+}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<!-- ЭКРАН 1: ВЫБОР -->
+<div id="menuScreen" class="screen">
+  <header>
+    <div class="header-top">
+      <h1>➗ Зал Деления</h1>
+      <div class="user-info">
+        <span class="nick-badge">🧙 <span id="userNickLabel">—</span></span>
+        <a href="index.html" class="btn tiny">← На главную</a>
+      </div>
+    </div>
+    <p style="color:#b9a9e8;font-weight:700;margin-top:10px">Выбери испытание:</p>
+  </header>
+  
+  <div class="menu-grid">
+    <div class="menu-card" data-mode="exact">
+      <div class="icon">💎</div>
+      <h3>Деление без остатка</h3>
+      <p>Примеры делятся ровно. Тренируем алгоритм уголком.</p>
+    </div>
+    <div class="menu-card" data-mode="remainder">
+      <div class="icon">🧩</div>
+      <h3>Деление с остатком</h3>
+      <p>В конце остается остаток. Учимся его находить и записывать.</p>
+    </div>
+  </div>
+</div>
+
+<!-- ЭКРАН 2: ТРЕНАЖЁР -->
+<div id="taskScreen" class="screen hidden">
+  <header>
+    <div class="header-top">
+      <h1 id="headerTitle">Деление уголком</h1>
+      <div class="user-info">
+        <button id="backToMenuBtn" class="btn tiny back-btn">← В меню</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="scroll-card">
+      <div class="division-container">
+        <div class="division-grid" id="divisionGrid">
+          <!-- Сетка генерируется тут -->
+        </div>
+      </div>
+
+      <div class="actions" style="margin-top:20px">
+        <button id="checkBtn" class="btn primary">Проверить</button>
+        <button id="newBtn" class="btn">🎲 Новое задание</button>
+        <button id="solveBtn" class="btn ghost">💡 Показать решение</button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+    </section>
+
+    <section id="stepsPanel" class="steps-panel hidden">
+      <h2>📜 Подробный разбор</h2>
+      <div id="stepsList"></div>
+      <div style="display:flex; justify-content:center; margin-top:18px;">
+        <button id="nextTaskBtn" class="btn primary">✨ Решить новое</button>
+      </div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="stat">🔥 Серия: <b id="streak">0</b></div>
+    <div class="stat">🏅 Счёт: <b id="score">0</b></div>
+  </footer>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ================================================================
+   1. КОНФИГ FIREBASE
+   ================================================================ */
+const firebaseConfig = {
+  apiKey:            "ВАШ_API_KEY",
+  authDomain:        "ВАШ_PROJECT.firebaseapp.com",
+  databaseURL:       "https://ВАШ_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "ВАШ_PROJECT",
+  storageBucket:     "ВАШ_PROJECT.appspot.com",
+  messagingSenderId: "ВАШ_SENDER_ID",
+  appId:             "ВАШ_APP_ID"
+};
+const CFG_OK = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("ВАШ_");
+
+const Store = {
+  mode: 'local', db: null,
+  async init(){
+    if (!CFG_OK) return false;
+    try { firebase.initializeApp(firebaseConfig); this.db = firebase.database(); this.mode = 'cloud'; return true; } 
+    catch(e){ return false; }
+  },
+  async saveAttempt(a){
+    if (this.mode === 'cloud') { await this.db.ref('attempts').push(a); } 
+    else { console.log('Local save:', a); }
+  }
+};
+
+/* ================================================================
+   2. ЗВЁЗДЫ И ПЕРЕМЕННЫЕ
+   ================================================================ */
+(function makeStars(){
+  const box = document.getElementById('stars'), frag = document.createDocumentFragment();
+  for (let i = 0; i < 80; i++){
+    const s = document.createElement('div'); s.className = 'star';
+    const sz = 1 + Math.random()*2.5;
+    s.style.width = sz+'px'; s.style.height = sz+'px';
+    s.style.left = (Math.random()*100).toFixed(2)+'%'; s.style.top = (Math.random()*100).toFixed(2)+'%';
+    s.style.animationDelay = (Math.random()*5).toFixed(2)+'s';
+    frag.appendChild(s);
+  }
+  box.appendChild(frag);
+})();
+
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const PRAISE = ['Молодец! ✨','Верно! Так держать! 🌟','Отличный счёт! 🪄','Магия чисел работает! 🔮','Супер! 🏆'];
+
+let current = null;
+let currentMode = 'exact';
+let streak = 0, score = 0;
+let studentNick = localStorage.getItem('magic_nick') || 'Ученик';
+let gridInputs = []; // Массив всех инпутов по порядку
+
+const $ = id => document.getElementById(id);
+const taskScreen = $('taskScreen'), menuScreen = $('menuScreen'), fbEl = $('feedback'),
+      gridContainer = $('divisionGrid'), stepsPanel = $('stepsPanel'), stepsList = $('stepsList');
+
+$('userNickLabel').textContent = studentNick;
+$('userNickLabel').parentElement.parentElement.innerHTML += `<a href="index.html" class="btn tiny" style="margin-left:8px">← На главную</a>`;
+
+/* ================================================================
+   3. ГЕНЕРАЦИЯ И ПОСТРОЕНИЕ СЕТКИ
+   ================================================================ */
+function generateTask() {
+  // Делитель от 100 до 999
+  let divisor = rnd(100, 999);
+  // Частное от 10 до 99 (чтобы делимое было 4-5 знаков)
+  let quotient = rnd(10, 99); 
+  let remainder = currentMode === 'remainder' ? rnd(1, divisor - 1) : 0;
+  let dividend = divisor * quotient + remainder;
+  
+  current = { dividend, divisor, quotient, remainder };
+  
+  buildGrid(dividend, divisor);
+}
+
+function buildGrid(dividend, divisor) {
+  gridContainer.innerHTML = '';
+  gridInputs = [];
+  
+  const dStr = String(dividend);
+  const vStr = String(divisor);
+  const qStr = String(current.quotient);
+  
+  const L = dStr.length;
+  const V = vStr.length;
+  const Q = qStr.length;
+  
+  // Сетка: 1 колонка для минуса, L для делимого, 1 для черты, V для делителя и частного
+  const maxRight = Math.max(V, Q);
+  const totalCols = 1 + L + 1 + maxRight;
+  const maxRows = 20; // С запасом
+  
+  const grid = Array.from({ length: maxRows + 1 }, () => Array(totalCols + 1).fill(null));
+  
+  // 1. Заполняем первый ряд (Делимое | Делитель)
+  for (let i = 0; i < L; i++) {
+    grid[1][2 + i] = { type: 'text', val: dStr[i] };
+  }
+  grid[1][2 + L] = { type: 'line-v' }; // Вертикальная черта
+  
+  for (let i = 0; i < V; i++) {
+    grid[1][3 + L + maxRight - V + i] = { type: 'text', val: vStr[i] };
+  }
+  
+  // 2. Заполняем второй ряд (Частное под делителем)
+  for (let i = 0; i < Q; i++) {
+    grid[2][3 + L + maxRight - Q + i] = { type: 'input', cat: 'quotient', exp: qStr[i] };
+  }
+  
+  // 3. Рассчитываем шаги деления
+  let steps = [];
+  let currentVal = 0;
+  for (let i = 0; i < L; i++) {
+    currentVal = currentVal * 10 + parseInt(dStr[i], 10);
+    if (currentVal >= divisor || i === L - 1) {
+      let qDigit = Math.floor(currentVal / divisor);
+      let prod = qDigit * divisor;
+      let rem = currentVal - prod;
+      steps.push({ endIdx: i, qDigit, prod, rem });
+      currentVal = rem;
+    }
+  }
+  
+  // 4. Заполняем строки с вычитанием
+  let row = 3;
+  for (let s = 0; s < steps.length; s++) {
+    let step = steps[s];
+    
+    // Произведение
+    let pStr = String(step.prod);
+    let pStart = (step.endIdx + 2) - pStr.length + 1; // 2-ка, т.к. 1-я колонка под минус
+    for (let j = 0; j < pStr.length; j++) {
+      grid[row][pStart + j] = { type: 'input', cat: 'prod', step: s, idx: j, exp: pStr[j] };
+    }
+    // Минус
+    grid[row][pStart - 1] = { type: 'text', val: '−', class: 'div-minus' };
+    
+    row++;
+    
+    // Черта
+    grid[row][pStart] = { type: 'line-h', end: step.endIdx + 2 };
+    row++;
+    
+    // Остаток
+    let rStr = String(step.rem);
+    let rStart = (step.endIdx + 2) - rStr.length + 1;
+    for (let j = 0; j < rStr.length; j++) {
+      grid[row][rStart + j] = { type: 'input', cat: 'rem', step: s, idx: j, exp: rStr[j] };
+    }
+    
+    // Сносим следующую цифру (если есть)
+    if (s < steps.length - 1) {
+      let nextStep = steps[s + 1];
+      for (let col = step.endIdx + 3; col <= nextStep.endIdx + 2; col++) {
+        grid[row][col] = { type: 'input', cat: 'brought', step: s, exp: dStr[col - 2] };
+      }
+    }
+    
+    row++;
+  }
+  
+  // 5. Рендерим матрицу в HTML
+  gridContainer.style.gridTemplateColumns = `repeat(${totalCols}, 1fr)`;
+  
+  for (let r = 1; r < row; r++) {
+    for (let c = 1; c <= totalCols; c++) {
+      const cellData = grid[r][c];
+      if (!cellData) continue; // Пустые клетки не рендерим
+      
+      const cell = document.createElement('div');
+      cell.className = 'div-cell';
+      cell.style.gridRow = r;
+      cell.style.gridColumn = c;
+      
+      if (cellData.type === 'text') {
+        cell.textContent = cellData.val;
+        if (cellData.class) cell.classList.add(cellData.class);
+        if (cellData.val !== '−') cell.classList.add('static-text');
+      } 
+      else if (cellData.type === 'line-v') {
+        const line = document.createElement('div');
+        line.className = 'div-line-v';
+        cell.appendChild(line);
+      } 
+      else if (cellData.type === 'line-h') {
+        const line = document.createElement('div');
+        line.className = 'div-line-h';
+        cell.style.gridColumn = `${c} / ${cellData.end + 1}`; // Растягиваем на нужные колонки
+        cell.style.width = '100%';
+        cell.appendChild(line);
+        gridContainer.appendChild(cell);
+        c = cellData.end; // Пропускаем ячейки, которые перекрыты линией
+        continue;
+      } 
+      else if (cellData.type === 'input') {
+        const inp = document.createElement('input');
+        inp.type = 'text';
+        inp.maxLength = 1;
+        inp.inputMode = 'numeric';
+        inp.dataset.cat = cellData.cat;
+        inp.dataset.step = cellData.step ?? '';
+        inp.dataset.idx = cellData.idx ?? '';
+        inp.dataset.exp = cellData.exp;
+        
+        cell.appendChild(inp);
+        gridInputs.push(inp);
+      }
+      
+      gridContainer.appendChild(cell);
+    }
+  }
+
+  // 6. Настраиваем переход по клеткам
+  for (let i = 0; i < gridInputs.length; i++) {
+    gridInputs[i].addEventListener('input', function() {
+      if (this.value.length === 1 && i < gridInputs.length - 1) {
+        gridInputs[i + 1].focus();
+      }
+    });
+    gridInputs[i].addEventListener('keydown', function(e) {
+      if (e.key === 'Backspace' && this.value === '' && i > 0) {
+        gridInputs[i - 1].focus();
+      }
+    });
+  }
+  
+  if (gridInputs.length > 0) gridInputs[0].focus();
+}
+
+/* ================================================================
+   4. ПРОВЕРКА ОТВЕТА
+   ================================================================ */
+async function checkAnswer() {
+  let isCorrect = true;
+  let empty = false;
+
+  gridInputs.forEach(inp => {
+    inp.classList.remove('wrong-border', 'correct-border');
+    if (!inp.value) empty = true;
+  });
+
+  if (empty) {
+    fbEl.textContent = 'Заполни все клеточки! ✨';
+    fbEl.className = 'feedback bad';
+    return;
+  }
+
+  // Проверяем каждый инпут
+  gridInputs.forEach(inp => {
+    if (inp.value !== inp.dataset.exp) {
+      isCorrect = false;
+      inp.classList.add('wrong-border');
+    } else {
+      inp.classList.add('correct-border');
+    }
+  });
+
+  if (isCorrect) {
+    streak++; score += 10;
+    fbEl.textContent = PRAISE[rnd(0, PRAISE.length-1)];
+    fbEl.className = 'feedback ok';
+    showToast('Верно! ✨');
+    burstConfetti();
+    magicSound();
+    
+    if (Store.mode === 'cloud' && studentNick !== 'Ученик') {
+      Store.saveAttempt({
+        nick: studentNick, timestamp: Date.now(), 
+        equation: `${current.dividend} : ${current.divisor}`, 
+        type: 'division_' + currentMode,
+        subject: 'division', correct: true, answer: current.quotient, remainder: current.remainder, correctAnswer: current.quotient
+      });
+    }
+    
+    gridInputs.forEach(i => i.disabled = true);
+    $('checkBtn').disabled = true; $('solveBtn').disabled = true;
+    renderSteps();
+  } else {
+    streak = 0;
+    fbEl.textContent = 'Есть ошибки! Проверь выделенные клеточки ✨';
+    fbEl.className = 'feedback bad';
+    
+    if (Store.mode === 'cloud' && studentNick !== 'Ученик') {
+      Store.saveAttempt({
+        nick: studentNick, timestamp: Date.now(), 
+        equation: `${current.dividend} : ${current.divisor}`, 
+        type: 'division_' + currentMode,
+        subject: 'division', correct: false, answer: current.quotient, remainder: current.remainder, correctAnswer: current.quotient
+      });
+    }
+  }
+  updateStats();
+}
+
+/* ================================================================
+   5. РАЗБОР
+   ================================================================ */
+function renderSteps() {
+  stepsList.innerHTML = '';
+  const card = document.createElement('div');
+  card.className = 'step-card';
+  
+  let html = '';
+  html += `<div class="label-box divide"><span>Делимое</span> — это число, которое мы делим: <b>${current.dividend}</b>.</div>`;
+  html += `<div class="label-box divider"><span>Делитель</span> — это число, на которое мы делим: <b>${current.divisor}</b>.</div>`;
+  html += `<div class="label-box quotient"><span>Неполное частное</span> — это результат деления: <b>${current.quotient}</b>.</div>`;
+  
+  if (current.remainder > 0) {
+    html += `<div class="label-box remainder"><span>Остаток</span> — это то, что осталось: <b>${current.remainder}</b>.</div>`;
+  } else {
+    html += `<div class="label-box remainder"><span>Остаток</span> — равен нулю (деление без остатка).</div>`;
+  }
+  
+  html += `<div style="margin-top:15px; padding-top:15px; border-top:1px dashed rgba(255,255,255,0.2);">`;
+  if (current.remainder > 0) {
+    html += `<div>Проверка: ${current.divisor} · ${current.quotient} + ${current.remainder} = ${current.dividend}</div>`;
+  } else {
+    html += `<div>Проверка: ${current.divisor} · ${current.quotient} = ${current.dividend}</div>`;
+  }
+  html += `</div>`;
+
+  card.innerHTML = html;
+  stepsList.appendChild(card);
+  stepsPanel.classList.remove('hidden');
+  
+  $('nextTaskBtn').onclick = () => { startNewTask(); };
+}
+
+/* ================================================================
+   6. ЭФФЕКТЫ И СТАРТ
+   ================================================================ */
+function startNewTask() {
+  stepsPanel.classList.add('hidden');
+  fbEl.textContent = '';
+  $('checkBtn').disabled = false;
+  $('newBtn').disabled = false;
+  $('solveBtn').disabled = false;
+  generateTask();
+}
+
+function updateStats(){
+  $('streak').textContent = streak;
+  $('score').textContent = score;
+}
+
+function showToast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._t); showToast._t = setTimeout(() => t.classList.remove('show'), 2000);
+}
+function burstConfetti(){
+  if (typeof confetti !== 'function') return;
+  confetti({ particleCount: 100, spread: 80, origin: {y: .65}, colors: ['#ffcf5c','#2ee6d6','#ff4fd8'] });
+}
+function magicSound(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC(), now = ctx.currentTime;
+    [660, 880].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'sine'; o.frequency.value = f;
+      g.gain.setValueAtTime(0, now + i*0.1);
+      g.gain.linearRampToValueAtTime(0.1, now + i*0.1 + 0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, now + i*0.1 + 0.25);
+      o.connect(g); g.connect(ctx.destination); o.start(now + i*0.1); o.stop(now + i*0.1 + 0.3);
+    });
+    setTimeout(() => ctx.close(), 800);
+  } catch(e){}
+}
+
+/* ================================================================
+   7. СОБЫТИЯ
+   ================================================================ */
+document.querySelectorAll('.menu-card').forEach(card => {
+  card.addEventListener('click', () => {
+    currentMode = card.dataset.mode;
+    menuScreen.classList.add('hidden');
+    taskScreen.classList.remove('hidden');
+    startNewTask();
+  });
+});
+
+$('backToMenuBtn').addEventListener('click', () => {
+  taskScreen.classList.add('hidden');
+  menuScreen.classList.remove('hidden');
+  stepsPanel.classList.add('hidden');
+});
+
+$('checkBtn').addEventListener('click', checkAnswer);
+$('newBtn').addEventListener('click', startNewTask);
+$('solveBtn').addEventListener('click', () => {
+  if(!current) return;
+  
+  // Заполняем все инпуты правильными ответами
+  gridInputs.forEach(inp => {
+    inp.value = inp.dataset.exp;
+    inp.disabled = true;
+    inp.classList.add('correct-border');
+  });
+  
+  $('checkBtn').disabled = true; $('solveBtn').disabled = true;
+  renderSteps();
+});
+
+// СТАРТ
+(async function init(){
+  await Store.init();
+  updateStats();
+})();
+</script>
+</body>
+</html>
