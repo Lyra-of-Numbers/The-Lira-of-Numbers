@@ -1,0 +1,813 @@
+﻿<!DOCTYPE html>
+<html lang="ru">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>Уравнения с умножением и делением — Магическая академия</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Cinzel:wght@700;900&family=Nunito:wght@400;700;800;900&display=swap" rel="stylesheet">
+<script src="https://cdn.jsdelivr.net/npm/canvas-confetti@1.9.3/dist/confetti.browser.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-app-compat.min.js"></script>
+<script src="https://cdnjs.cloudflare.com/ajax/libs/firebase/10.12.0/firebase-database-compat.min.js"></script>
+
+<style>
+/* ============ БАЗА ============ */
+*{box-sizing:border-box;-webkit-tap-highlight-color:transparent}
+html,body{margin:0;padding:0}
+body{
+  min-height:100vh;font-family:'Nunito',system-ui,sans-serif;color:#e9e4ff;
+  background:
+    radial-gradient(1100px 750px at 50% -12%, #4a2385 0%, rgba(74,35,133,0) 62%),
+    radial-gradient(900px 700px at 92% 12%, #123a5e 0%, rgba(18,58,94,0) 60%),
+    radial-gradient(800px 800px at 6% 85%, #3a0f52 0%, rgba(58,15,82,0) 60%),
+    linear-gradient(170deg, #12072b 0%, #1a0b3d 35%, #0d1030 70%, #05030f 100%);
+  background-attachment:fixed;overflow-x:hidden;padding-bottom:110px;
+}
+#stars{position:fixed;inset:0;pointer-events:none;z-index:0;overflow:hidden}
+.star{position:absolute;border-radius:50%;background:#fff;box-shadow:0 0 6px 1px rgba(255,255,255,.85);animation:twinkle 3s infinite ease-in-out;opacity:.7}
+@keyframes twinkle{0%,100%{opacity:.15;transform:scale(.7)}50%{opacity:1;transform:scale(1.25)}}
+
+.screen{position:relative;z-index:2}
+.hidden{display:none !important}
+
+/* ============ ШАПКА ============ */
+header{position:relative;z-index:2;text-align:center;padding:22px 16px 6px}
+.header-top{display:flex;justify-content:space-between;align-items:center;flex-wrap:wrap;gap:10px;max-width:880px;margin:0 auto 8px;padding:0 16px}
+.header-top h1{font-family:'Cinzel',serif;font-weight:900;font-size:clamp(16px,3.2vw,26px);margin:0;letter-spacing:.02em;
+  background:linear-gradient(100deg,#ffd76a,#fff3c4 35%,#ffcf5c 55%,#e0a3ff 80%,#2ee6d6);
+  -webkit-background-clip:text;background-clip:text;color:transparent;line-height:1.2}
+.user-info{display:flex;gap:8px;align-items:center;flex-wrap:wrap}
+.nick-badge{font-size:13px;font-weight:800;color:#ffe8b0;background:rgba(255,207,92,.13);
+  border:1px solid rgba(255,207,92,.4);padding:6px 12px;border-radius:12px;white-space:nowrap}
+.btn.tiny{padding:7px 14px;font-size:12px;border-radius:11px;text-decoration:none;display:inline-block}
+.btn.back-btn{background:rgba(255,255,255,.07);border:1.5px solid rgba(160,130,255,.38);color:#e8dfff;cursor:pointer;font-family:'Nunito';font-weight:900}
+.btn.back-btn:hover{border-color:#ffcf5c;color:#fff;box-shadow:0 0 15px rgba(255,207,92,.3)}
+
+/* ============ МЕНЮ ВЫБОРА ============ */
+#menuScreen{max-width:880px;margin:0 auto;padding:20px 16px;animation:cardIn .5s ease}
+.menu-grid{display:grid;grid-template-columns:repeat(auto-fit,minmax(240px,1fr));gap:16px;margin-top:20px}
+.menu-card{background:linear-gradient(160deg,rgba(255,255,255,.08),rgba(255,255,255,.02));
+  border:1.5px solid rgba(160,130,255,.3);border-radius:20px;padding:24px 20px;cursor:pointer;
+  transition:.25s;text-align:center;box-shadow:0 8px 24px rgba(0,0,0,.3)}
+.menu-card:hover{transform:translateY(-5px);border-color:#ffcf5c;box-shadow:0 12px 30px rgba(255,207,92,.2)}
+.menu-card .icon{font-size:36px;margin-bottom:10px;filter:drop-shadow(0 0 10px rgba(255,255,255,.4))}
+.menu-card h3{font-family:'Cinzel',serif;font-size:18px;margin:0 0 6px;color:#ffe8b0}
+.menu-card p{font-size:13px;color:#b9a9e8;margin:0;font-weight:700;line-height:1.4}
+
+/* ============ КАРТОЧКА ============ */
+main{position:relative;z-index:2;max-width:880px;margin:0 auto;padding:0 16px}
+.scroll-card{position:relative;background:linear-gradient(160deg,rgba(255,255,255,.075),rgba(255,255,255,.028));
+  border:1.5px solid rgba(255,207,92,.36);border-radius:26px;padding:24px 20px 22px;
+  backdrop-filter:blur(9px);-webkit-backdrop-filter:blur(9px);
+  box-shadow:0 0 46px rgba(120,80,255,.22),0 18px 46px rgba(0,0,0,.42),inset 0 1px 0 rgba(255,255,255,.12);
+  animation:cardIn .4s cubic-bezier(.22,1,.36,1)}
+@keyframes cardIn{from{opacity:0;transform:translateY(20px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.type-badge{display:inline-block;font-size:11px;font-weight:800;letter-spacing:.09em;text-transform:uppercase;
+  padding:4px 12px;border-radius:999px;background:rgba(46,230,214,.13);color:#7df3e8;
+  border:1px solid rgba(46,230,214,.4);margin-bottom:8px}
+
+.eq{display:flex;flex-wrap:wrap;align-items:center;justify-content:center;
+  gap:2px;font-family:'Nunito',sans-serif;font-weight:900;
+  font-size:clamp(24px,5.6vw,44px);text-align:center;line-height:1.5;
+  padding:34px 6px 14px;animation:orbFloat 4.6s ease-in-out infinite;
+  filter:drop-shadow(0 0 22px rgba(160,120,255,.4));}
+@keyframes orbFloat{0%,100%{transform:translateY(0) rotate(-.4deg)}50%{transform:translateY(-7px) rotate(.4deg)}}
+.eq.small{font-size:clamp(19px,3.9vw,29px);padding:22px 4px 8px;animation:none;filter:none}
+
+.tok{position:relative;display:inline-block;padding:3px 9px;border-radius:11px;margin:0 3px;transition:.25s}
+.lbl{position:absolute;bottom:100%;left:50%;transform:translateX(-50%);
+  font-size:9.5px;font-weight:900;letter-spacing:.03em;text-transform:uppercase;
+  padding:2px 7px;border-radius:999px;white-space:nowrap;margin-bottom:3px;line-height:1.4;
+  box-shadow:0 3px 10px rgba(0,0,0,.35);}
+
+/* цвета компонентов */
+.gold   {background:rgba(255,207,92,.15); box-shadow:inset 0 0 0 2px rgba(255,207,92,.8); color:#ffe8b0}
+.gold   .lbl{background:#ffcf5c;color:#3a2a00}
+.orange {background:rgba(255,146,60,.15); box-shadow:inset 0 0 0 2px rgba(255,146,60,.8); color:#ffd3ab}
+.orange .lbl{background:#ff923c;color:#3a1c00}
+.blue   {background:rgba(90,190,255,.15); box-shadow:inset 0 0 0 2px rgba(90,190,255,.8); color:#c3e9ff}
+.blue   .lbl{background:#5abeff;color:#022a44}
+.purple {background:rgba(178,120,255,.17); box-shadow:inset 0 0 0 2px rgba(178,120,255,.82); color:#e3ccff}
+.purple .lbl{background:#b278ff;color:#23003f}
+.lime   {background:rgba(166,255,77,.13); box-shadow:inset 0 0 0 2px rgba(166,255,77,.75); color:#e0ffb8}
+.lime   .lbl{background:#a6ff4d;color:#123300}
+
+.skobka{
+  border:2px dashed #2ee6d6;background:rgba(46,230,214,.09);
+  border-radius:13px;
+}
+.skobka .lbl{background:#2ee6d6;color:#00332f}
+
+.unknown{
+  box-shadow:inset 0 0 0 2px #ff4fd8, 0 0 18px rgba(255,79,216,.45);
+  background:rgba(255,79,216,.13);color:#ffd9f7;
+  animation:pulseU 1.7s ease-in-out infinite;
+}
+.unknown .lbl{background:#ff4fd8;color:#3a0029}
+@keyframes pulseU{
+  0%,100%{box-shadow:inset 0 0 0 2px #ff4fd8,0 0 10px rgba(255,79,216,.25)}
+  50%{box-shadow:inset 0 0 0 2px #ff8ce8,0 0 24px rgba(255,79,216,.75)}
+}
+
+.answer-row{display:flex;gap:10px;justify-content:center;align-items:center;flex-wrap:wrap;margin-top:14px}
+.answer-row .xlbl{font-size:clamp(20px,4vw,28px);font-weight:900;color:#c9b8ff}
+#answerInput{width:130px;padding:12px 14px;font-family:'Nunito',sans-serif;
+  font-size:22px;font-weight:900;text-align:center;color:#fff;background:rgba(10,6,28,.66);
+  border:2px solid rgba(160,130,255,.5);border-radius:16px;outline:none;transition:.22s;}
+#answerInput::placeholder{color:#6b5aa8}
+#answerInput:focus{border-color:#ffcf5c;box-shadow:0 0 0 4px rgba(255,207,92,.16),0 0 22px rgba(255,207,92,.35);}
+#answerInput::-webkit-outer-spin-button,#answerInput::-webkit-inner-spin-button{-webkit-appearance:none;margin:0}
+#answerInput[type=number]{-moz-appearance:textfield}
+#answerInput.shake{animation:shake .42s}
+@keyframes shake{0%,100%{transform:translateX(0)}20%{transform:translateX(-9px)}
+  40%{transform:translateX(9px)}60%{transform:translateX(-6px)}80%{transform:translateX(6px)}}
+
+.btn{font-family:'Nunito',sans-serif;font-weight:900;font-size:15px;padding:13px 22px;border-radius:16px;
+  cursor:pointer;color:#e8dfff;background:rgba(255,255,255,.07);
+  border:1.5px solid rgba(160,130,255,.38);transition:.22s;}
+.btn:hover:not(:disabled){transform:translateY(-2px);color:#fff;border-color:rgba(255,207,92,.65);box-shadow:0 0 22px rgba(255,207,92,.3);}
+.btn.primary{background:linear-gradient(135deg,#ffcf5c,#ffa63c 55%,#ff7ad9);color:#2b1700;border:none;
+  box-shadow:0 0 26px rgba(255,175,60,.5),0 8px 20px rgba(0,0,0,.35);}
+.btn.primary:hover:not(:disabled){color:#2b1700;box-shadow:0 0 38px rgba(255,190,90,.8),0 10px 24px rgba(0,0,0,.4);}
+.btn.ghost{background:rgba(46,230,214,.09);border-color:rgba(46,230,214,.4);color:#8cf5ea}
+.btn.ghost:hover:not(:disabled){border-color:#2ee6d6;box-shadow:0 0 22px rgba(46,230,214,.4);}
+.btn:disabled{opacity:.4;cursor:not-allowed;transform:none;box-shadow:none;}
+
+.actions{display:flex;gap:10px;justify-content:center;flex-wrap:wrap;margin-top:14px;}
+.feedback{text-align:center;font-weight:800;font-size:16px;margin-top:14px;min-height:24px;line-height:1.45;transition:.3s;}
+.feedback.ok{color:#a6ff4d;text-shadow:0 0 18px rgba(166,255,77,.6)}
+.feedback.bad{color:#ff9ec4;text-shadow:0 0 16px rgba(255,79,150,.45)}
+
+.steps-panel{margin-top:22px;background:linear-gradient(160deg,rgba(255,255,255,.055),rgba(255,255,255,.02));
+  border:1.5px solid rgba(46,230,214,.32);border-radius:24px;padding:20px 16px 18px;
+  backdrop-filter:blur(8px);-webkit-backdrop-filter:blur(8px);
+  box-shadow:0 0 40px rgba(46,230,214,.13),0 16px 40px rgba(0,0,0,.4);transition:.35s;}
+.steps-panel.hidden{display:none;}
+.steps-panel h2{font-family:'Cinzel',serif;font-size:clamp(16px,3.2vw,21px);margin:0 0 16px;text-align:center;
+  color:#8cf5ea;letter-spacing:.04em;text-shadow:0 0 20px rgba(46,230,214,.45);}
+.warning-banner{background:rgba(255,146,60,.13);border:1.5px solid rgba(255,146,60,.5);
+  border-radius:14px;padding:12px 14px;margin-bottom:14px;color:#ffc79a;font-weight:800;font-size:14px;line-height:1.5;text-align:center}
+
+.step-card{background:rgba(12,7,32,.58);border:1.5px solid rgba(160,130,255,.28);border-radius:18px;
+  padding:14px 14px 12px;margin-bottom:12px;animation:stepIn .5s cubic-bezier(.22,1,.36,1) both;
+  box-shadow:0 6px 20px rgba(0,0,0,.3);}
+@keyframes stepIn{from{opacity:0;transform:translateY(18px) scale(.97)}to{opacity:1;transform:translateY(0) scale(1)}}
+.step-card.check{border-color:rgba(166,255,77,.55);background:rgba(30,60,10,.34);box-shadow:0 0 28px rgba(166,255,77,.22);}
+.stage{display:inline-block;font-size:10.5px;font-weight:900;letter-spacing:.1em;text-transform:uppercase;
+  color:#ffcf5c;background:rgba(255,207,92,.12);border:1px solid rgba(255,207,92,.4);
+  padding:3px 10px;border-radius:999px;margin-bottom:8px;}
+.rule{font-size:14.5px;font-weight:700;line-height:1.5;color:#c9bcef;text-align:center;margin-top:6px;padding:0 4px;}
+.check-text{font-size:clamp(15px,3vw,19px);font-weight:900;color:#b7ff70;text-align:center;
+  line-height:1.5;text-shadow:0 0 16px rgba(166,255,77,.5);}
+
+footer{position:fixed;left:0;right:0;bottom:0;z-index:5;display:flex;gap:8px;justify-content:center;
+  align-items:center;flex-wrap:wrap;padding:11px 12px;
+  background:linear-gradient(0deg,rgba(5,3,15,.97),rgba(10,5,28,.85) 70%,rgba(10,5,28,0));
+  backdrop-filter:blur(10px);-webkit-backdrop-filter:blur(10px);border-top:1px solid rgba(160,130,255,.2);}
+.stat{font-size:12.5px;font-weight:800;color:#a99bd6;background:rgba(255,255,255,.055);
+  border:1px solid rgba(160,130,255,.22);padding:6px 12px;border-radius:12px;white-space:nowrap;}
+.stat b{color:#ffcf5c;font-size:14px;}
+
+.toast{position:fixed;left:50%;top:22%;transform:translate(-50%,-24px) scale(.9);z-index:60;pointer-events:none;
+  font-family:'Nunito',sans-serif;font-weight:900;font-size:clamp(16px,3.6vw,25px);
+  padding:16px 28px;border-radius:20px;color:#2b1700;
+  background:linear-gradient(135deg,#ffe9a8,#ffcf5c 45%,#ff9ee0);
+  box-shadow:0 0 44px rgba(255,207,92,.75),0 14px 40px rgba(0,0,0,.45);
+  opacity:0;transition:.35s cubic-bezier(.22,1,.36,1);text-align:center;max-width:88vw;}
+.toast.show{opacity:1;transform:translate(-50%,0) scale(1);}
+
+@media(max-width:560px){
+  .scroll-card{padding:18px 12px 16px;border-radius:20px}
+  .btn{padding:12px 16px;font-size:14px}
+  .stat{font-size:11px;padding:5px 9px}
+  .lbl{font-size:8px;padding:1px 5px}
+  #answerInput{width:110px;font-size:20px}
+}
+</style>
+</head>
+<body>
+
+<div id="stars"></div>
+
+<!-- ЭКРАН 1: ВЫБОР СЛОЖНОСТИ -->
+<div id="menuScreen" class="screen">
+  <header>
+    <div class="header-top">
+      <h1>⚖️ Уравнения (Умножение/Деление)</h1>
+      <div class="user-info">
+        <span class="nick-badge">🧙 <span id="userNickLabel">—</span></span>
+        <a href="index.html" class="btn tiny">← На главную</a>
+      </div>
+    </div>
+    <p style="color:#b9a9e8;font-weight:700;margin-top:10px">Выбери уровень сложности, юный маг:</p>
+  </header>
+  
+  <div class="menu-grid">
+    <div class="menu-card" data-max="10">
+      <div class="icon">🔟</div>
+      <h3>Числа до 10</h3>
+      <p>Небольшие числа. Отлично подходит для разминки и отработки правил.</p>
+    </div>
+    <div class="menu-card" data-max="100">
+      <div class="icon">💯</div>
+      <h3>Числа до 100</h3>
+      <p>Двузначные числа. Уровень подмастерья для уверенного счёта.</p>
+    </div>
+    <div class="menu-card" data-max="1000">
+      <div class="icon">🌌</div>
+      <h3>Числа до 1000</h3>
+      <p>Большие числа. Настоящее испытание для будущих архимагов!</p>
+    </div>
+  </div>
+</div>
+
+<!-- ЭКРАН 2: ТРЕНАЖЁР -->
+<div id="taskScreen" class="screen hidden">
+  <header>
+    <div class="header-top">
+      <h1 id="headerTitle">Уравнение</h1>
+      <div class="user-info">
+        <button id="backToMenuBtn" class="btn tiny back-btn">← В меню</button>
+      </div>
+    </div>
+  </header>
+
+  <main>
+    <section class="scroll-card">
+      <div class="type-badge" id="typeBadge">Уравнение</div>
+      <div class="eq" id="equation">…</div>
+
+      <div class="answer-row">
+        <span class="xlbl">x =</span>
+        <input id="answerInput" type="number" inputmode="numeric" placeholder="?" autocomplete="off">
+        <button id="checkBtn" class="btn primary">Проверить</button>
+      </div>
+
+      <div class="actions">
+        <button id="newBtn" class="btn">🎲 Новое уравнение</button>
+        <button id="solveBtn" class="btn ghost">🔍 Показать решение</button>
+      </div>
+
+      <div id="feedback" class="feedback"></div>
+    </section>
+
+    <section id="stepsPanel" class="steps-panel hidden">
+      <h2>📜 Пошаговый разбор</h2>
+      <div id="warningBanner" class="warning-banner hidden"></div>
+      <div id="stepsList"></div>
+      <div class="steps-footer" id="stepsFooter" style="display:flex; justify-content:center; margin-top:18px;"></div>
+    </section>
+  </main>
+
+  <footer>
+    <div class="stat">🔥 Серия: <b id="streak">0</b></div>
+    <div class="stat">🏅 Счёт: <b id="score">0</b></div>
+  </footer>
+</div>
+
+<div id="toast" class="toast"></div>
+
+<script>
+/* ================================================================
+   1. КОНФИГ FIREBASE (ВСТАВЬТЕ СВОИ ЗНАЧЕНИЯ)
+   ================================================================ */
+const firebaseConfig = {
+  apiKey:            "ВАШ_API_KEY",
+  authDomain:        "ВАШ_PROJECT.firebaseapp.com",
+  databaseURL:       "https://ВАШ_PROJECT-default-rtdb.europe-west1.firebasedatabase.app",
+  projectId:         "ВАШ_PROJECT",
+  storageBucket:     "ВАШ_PROJECT.appspot.com",
+  messagingSenderId: "ВАШ_SENDER_ID",
+  appId:             "ВАШ_APP_ID"
+};
+const CFG_OK = firebaseConfig.apiKey && !firebaseConfig.apiKey.includes("ВАШ_");
+
+const Store = {
+  mode: 'local', db: null,
+  async init(){
+    if (!CFG_OK) return false;
+    try { firebase.initializeApp(firebaseConfig); this.db = firebase.database(); this.mode = 'cloud'; return true; } 
+    catch(e){ return false; }
+  },
+  async saveAttempt(a){
+    if (this.mode === 'cloud') { await this.db.ref('attempts').push(a); } 
+    else { console.log('Local save:', a); }
+  }
+};
+
+/* ================================================================
+   2. ЗВЁЗДЫ И ПЕРЕМЕННЫЕ
+   ================================================================ */
+(function makeStars(){
+  const box = document.getElementById('stars'), frag = document.createDocumentFragment();
+  for (let i = 0; i < 80; i++){
+    const s = document.createElement('div'); s.className = 'star';
+    const sz = 1 + Math.random()*2.5;
+    s.style.width = sz+'px'; s.style.height = sz+'px';
+    s.style.left = (Math.random()*100).toFixed(2)+'%'; s.style.top = (Math.random()*100).toFixed(2)+'%';
+    s.style.animationDelay = (Math.random()*5).toFixed(2)+'s';
+    frag.appendChild(s);
+  }
+  box.appendChild(frag);
+})();
+
+const rnd = (a,b) => Math.floor(Math.random()*(b-a+1))+a;
+const PRAISE = ['Молодец! ✨','Так держать, юный маг! 🌟','Великолепно! Твоя палочка светится! 🪄','Браво! Академия гордится тобой! 🏆','Идеально! Заклинание сработало! 🔮','Ты настоящий архимаг чисел! 🧙‍♂️','Блестяще! Ещё один кристалл в твою коллекцию! 💎','Верно! Звёзды аплодируют! ⭐'];
+const WRONG_MSG = ['Почти получилось! Попробуй ещё раз ✨','Ещё чуть-чуть! Магия рядом 🪄','Не сдавайся, юный маг! Попробуй снова 🌙','Ошибка — тоже шаг к мастерству 🔮'];
+
+let current = null;
+let currentMax = 100;
+let wrongCount = 0, streak = 0, score = 0;
+let studentNick = localStorage.getItem('magic_nick') || 'Ученик';
+
+const $ = id => document.getElementById(id);
+const eqEl = $('equation'), badgeEl = $('typeBadge'), fbEl = $('feedback'),
+      inputEl = $('answerInput'), stepsPanel = $('stepsPanel'), stepsList = $('stepsList'),
+      warningBanner = $('warningBanner'), stepsFooter = $('stepsFooter');
+
+$('userNickLabel').textContent = studentNick;
+$('userNickLabel').parentElement.parentElement.innerHTML += `<a href="index.html" class="btn tiny" style="margin-left:8px">← На главную</a>`;
+
+/* ================================================================
+   3. ЦВЕТА И ШАБЛОНЫ
+   ================================================================ */
+const COLORS = {
+  'слагаемое':'gold','сумма':'orange','уменьшаемое':'blue','вычитаемое':'purple','разность':'lime',
+  'множитель':'gold','произведение':'orange','делимое':'blue','делитель':'purple','частное':'lime'
+};
+function T(txt,comp){
+  if (!comp) return `<span class="tok">${txt}</span>`;
+  return `<span class="tok ${COLORS[comp]||'gold'}"><span class="lbl">${comp}</span>${txt}</span>`;
+}
+function BR(inner,comp){
+  return `<span class="tok skobka ${comp?(COLORS[comp]||''):''}"><span class="lbl">${comp||'?'}</span>(${inner})</span>`;
+}
+const XU = `<span class="tok unknown">x</span>`;
+const GREEN = v => `<b style="color:#a6ff4d">${v}</b>`;
+
+/* ================================================================
+   4. ТИПЫ УРАВНЕНИЙ (С ТОЧНЫМ КОНТРОЛЕМ ЧИСЕЛ)
+   ================================================================ */
+const TYPES = {
+  1: { // a * (x + b) = c
+    label: 'Умножение · неизвестное слагаемое',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const a = rnd(2, max === 1000 ? 3 : 9); // Множитель всегда маленький
+      const sumMin = min * 2;
+      const sumMax = Math.floor(max / a);
+      if (sumMax < sumMin) return null;
+      const sum = rnd(sumMin, sumMax);
+      const x = rnd(min, sum - min);
+      const b = sum - x;
+      return {x, a, b, c: a * sum}; 
+    },
+    display:p=>`${p.a} · (${XU} + ${p.b}) = ${p.c}`,
+    check:p=>`${p.a} · (${p.x} + ${p.b}) = ${p.a} · ${p.x+p.b} = ${p.c}`,
+    steps(p){
+      const brVal = p.x + p.b;
+      return [
+        { stage:'Этап 1', html:`${T(p.a,'множитель')} · ${BR(`x + ${p.b}`,'множитель')} = ${T(p.c,'произведение')}`,
+          rule:'Скобка — это <b>множитель</b>. Чтобы найти неизвестный множитель, нужно произведение разделить на известный множитель.' },
+        { html:`${BR(`x + ${p.b}`,'множитель')} = ${T(p.c,'произведение')} : ${T(p.a,'множитель')}`, rule:'Вычисляем значение скобки.' },
+        { html:`x + ${p.b} = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T('x','слагаемое')} + ${T(p.b,'слагаемое')} = ${T(brVal,'сумма')}`,
+          rule:'Неизвестно <b>слагаемое</b>. Чтобы найти неизвестное слагаемое, нужно из суммы вычесть известное слагаемое.' },
+        { html:`x = ${T(brVal,'сумма')} − ${T(p.b,'слагаемое')}`, rule:'Из суммы вычитаем известное слагаемое.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  2: { // a * (x - b) = c
+    label: 'Умножение · неизвестное уменьшаемое',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const a = rnd(2, max === 1000 ? 3 : 9); 
+      const diffMax = Math.floor(max / a);
+      if (diffMax < min) return null;
+      const diff = rnd(min, diffMax); // Результат в скобках > 100
+      const b = rnd(Math.floor(min/2), diff); // Вычитаемое тоже большое
+      const x = diff + b;
+      return {x, a, b, c: a * diff}; 
+    },
+    display:p=>`${p.a} · (${XU} − ${p.b}) = ${p.c}`,
+    check:p=>`${p.a} · (${p.x} − ${p.b}) = ${p.a} · ${p.x-p.b} = ${p.c}`,
+    steps(p){
+      const brVal = p.x - p.b;
+      return [
+        { stage:'Этап 1', html:`${T(p.a,'множитель')} · ${BR(`x − ${p.b}`,'множитель')} = ${T(p.c,'произведение')}`,
+          rule:'Скобка — это <b>множитель</b>. Чтобы найти неизвестный множитель, нужно произведение разделить на известный множитель.' },
+        { html:`${BR(`x − ${p.b}`,'множитель')} = ${T(p.c,'произведение')} : ${T(p.a,'множитель')}`, rule:'Вычисляем значение скобки.' },
+        { html:`x − ${p.b} = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T('x','уменьшаемое')} − ${T(p.b,'вычитаемое')} = ${T(brVal,'разность')}`,
+          rule:'Неизвестно <b>уменьшаемое</b>. Чтобы найти уменьшаемое, нужно к разности прибавить вычитаемое.' },
+        { html:`x = ${T(brVal,'разность')} + ${T(p.b,'вычитаемое')}`, rule:'К разности прибавляем вычитаемое.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  3: { // a * (b - x) = c
+    label: 'Умножение · неизвестное вычитаемое',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const a = rnd(2, max === 1000 ? 3 : 9); 
+      const diffMax = Math.floor(max / a);
+      if (diffMax < min) return null;
+      const diff = rnd(min, diffMax); 
+      const x = rnd(Math.floor(min/2), diff); // Вычитаемое большое
+      const b = diff + x; // Уменьшаемое еще больше
+      return {x, a, b, c: a * diff}; 
+    },
+    display:p=>`${p.a} · (${p.b} − ${XU}) = ${p.c}`,
+    check:p=>`${p.a} · (${p.b} − ${p.x}) = ${p.a} · ${p.b-p.x} = ${p.c}`,
+    steps(p){
+      const brVal = p.b - p.x;
+      return [
+        { stage:'Этап 1', html:`${T(p.a,'множитель')} · ${BR(`${p.b} − x`,'множитель')} = ${T(p.c,'произведение')}`,
+          rule:'Скобка — это <b>множитель</b>. Чтобы найти неизвестный множитель, нужно произведение разделить на известный множитель.' },
+        { html:`${BR(`${p.b} − x`,'множитель')} = ${T(p.c,'произведение')} : ${T(p.a,'множитель')}`, rule:'Вычисляем значение скобки.' },
+        { html:`${p.b} − x = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T(p.b,'уменьшаемое')} − ${T('x','вычитаемое')} = ${T(brVal,'разность')}`,
+          rule:'Неизвестно <b>вычитаемое</b>. Чтобы найти вычитаемое, нужно из уменьшаемого вычесть разность.' },
+        { html:`x = ${T(p.b,'уменьшаемое')} − ${T(brVal,'разность')}`, rule:'Из уменьшаемого вычитаем разность.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  4: { // (x + b) : a = c
+    label: 'Деление · неизвестное слагаемое',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const c = rnd(min, Math.floor(max / 2)); // Частное большое
+      const a = rnd(2, Math.floor(max / c)); // Делитель маленький
+      const sum = a * c; // Делимое еще больше
+      if (sum < min * 2) return null;
+      const x = rnd(min, sum - min);
+      const b = sum - x;
+      return {x, a, b, c}; 
+    },
+    display:p=>`(${XU} + ${p.b}) : ${p.a} = ${p.c}`,
+    check:p=>`(${p.x} + ${p.b}) : ${p.a} = ${p.x+p.b} : ${p.a} = ${p.c}`,
+    steps(p){
+      const brVal = p.x + p.b;
+      return [
+        { stage:'Этап 1', html:`${BR(`x + ${p.b}`,'делимое')} : ${T(p.a,'делитель')} = ${T(p.c,'частное')}`,
+          rule:'Скобка — это <b>делимое</b>. Чтобы найти делимое, нужно частное умножить на делитель.' },
+        { html:`${BR(`x + ${p.b}`,'делимое')} = ${T(p.c,'частное')} · ${T(p.a,'делитель')}`, rule:'Вычисляем значение скобки.' },
+        { html:`x + ${p.b} = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T('x','слагаемое')} + ${T(p.b,'слагаемое')} = ${T(brVal,'сумма')}`,
+          rule:'Неизвестно <b>слагаемое</b>. Чтобы найти неизвестное слагаемое, нужно из суммы вычесть известное слагаемое.' },
+        { html:`x = ${T(brVal,'сумма')} − ${T(p.b,'слагаемое')}`, rule:'Из суммы вычитаем известное слагаемое.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  5: { // (x - b) : a = c
+    label: 'Деление · неизвестное уменьшаемое',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const c = rnd(min, Math.floor(max / 2)); 
+      const a = rnd(2, Math.floor(max / c)); 
+      const diff = a * c; 
+      const b = rnd(Math.floor(min/2), diff); // Вычитаемое большое
+      const x = diff + b; // Уменьшаемое очень большое
+      return {x, a, b, c}; 
+    },
+    display:p=>`(${XU} − ${p.b}) : ${p.a} = ${p.c}`,
+    check:p=>`(${p.x} − ${p.b}) : ${p.a} = ${p.x-p.b} : ${p.a} = ${p.c}`,
+    steps(p){
+      const brVal = p.x - p.b;
+      return [
+        { stage:'Этап 1', html:`${BR(`x − ${p.b}`,'делимое')} : ${T(p.a,'делитель')} = ${T(p.c,'частное')}`,
+          rule:'Скобка — это <b>делимое</b>. Чтобы найти делимое, нужно частное умножить на делитель.' },
+        { html:`${BR(`x − ${p.b}`,'делимое')} = ${T(p.c,'частное')} · ${T(p.a,'делитель')}`, rule:'Вычисляем значение скобки.' },
+        { html:`x − ${p.b} = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T('x','уменьшаемое')} − ${T(p.b,'вычитаемое')} = ${T(brVal,'разность')}`,
+          rule:'Неизвестно <b>уменьшаемое</b>. Чтобы найти уменьшаемое, нужно к разности прибавить вычитаемое.' },
+        { html:`x = ${T(brVal,'разность')} + ${T(p.b,'вычитаемое')}`, rule:'К разности прибавляем вычитаемое.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  6: { // (b - x) : a = c
+    label: 'Деление · неизвестное вычитаемое',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const c = rnd(min, Math.floor(max / 2)); 
+      const a = rnd(2, Math.floor(max / c)); 
+      const diff = a * c; 
+      const x = rnd(Math.floor(min/2), diff); // Вычитаемое большое
+      const b = diff + x; // Уменьшаемое очень большое
+      return {x, a, b, c}; 
+    },
+    display:p=>`(${p.b} − ${XU}) : ${p.a} = ${p.c}`,
+    check:p=>`(${p.b} − ${p.x}) : ${p.a} = ${p.b-p.x} : ${p.a} = ${p.c}`,
+    steps(p){
+      const brVal = p.b - p.x;
+      return [
+        { stage:'Этап 1', html:`${BR(`${p.b} − x`,'делимое')} : ${T(p.a,'делитель')} = ${T(p.c,'частное')}`,
+          rule:'Скобка — это <b>делимое</b>. Чтобы найти делимое, нужно частное умножить на делитель.' },
+        { html:`${BR(`${p.b} − x`,'делимое')} = ${T(p.c,'частное')} · ${T(p.a,'делитель')}`, rule:'Вычисляем значение скобки.' },
+        { html:`${p.b} − x = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T(p.b,'уменьшаемое')} − ${T('x','вычитаемое')} = ${T(brVal,'разность')}`,
+          rule:'Неизвестно <b>вычитаемое</b>. Чтобы найти вычитаемое, нужно из уменьшаемого вычесть разность.' },
+        { html:`x = ${T(p.b,'уменьшаемое')} − ${T(brVal,'разность')}`, rule:'Из уменьшаемого вычитаем разность.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  7: { // a : (x + b) = c
+    label: 'Деление · неизвестное в делителе (+)',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const c = rnd(2, max === 1000 ? 3 : 9); 
+      const sumMin = min * 2;
+      const sumMax = Math.floor(max / c);
+      if (sumMax < sumMin) return null;
+      const sum = rnd(sumMin, sumMax); // Скобка большая
+      const x = rnd(min, sum - min); 
+      const b = sum - x;
+      const a = c * sum; // Делимое огромное
+      return {x, a, b, c}; 
+    },
+    display:p=>`${p.a} : (${XU} + ${p.b}) = ${p.c}`,
+    check:p=>`${p.a} : (${p.x} + ${p.b}) = ${p.a} : ${p.x+p.b} = ${p.c}`,
+    steps(p){
+      const brVal = p.x + p.b;
+      return [
+        { stage:'Этап 1', html:`${T(p.a,'делимое')} : ${BR(`x + ${p.b}`,'делитель')} = ${T(p.c,'частное')}`,
+          rule:'Скобка — это <b>делитель</b>. Чтобы найти делитель, нужно делимое разделить на частное.' },
+        { html:`${BR(`x + ${p.b}`,'делитель')} = ${T(p.a,'делимое')} : ${T(p.c,'частное')}`, rule:'Вычисляем значение скобки.' },
+        { html:`x + ${p.b} = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T('x','слагаемое')} + ${T(p.b,'слагаемое')} = ${T(brVal,'сумма')}`,
+          rule:'Неизвестно <b>слагаемое</b>. Чтобы найти неизвестное слагаемое, нужно из суммы вычесть известное слагаемое.' },
+        { html:`x = ${T(brVal,'сумма')} − ${T(p.b,'слагаемое')}`, rule:'Из суммы вычитаем известное слагаемое.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  8: { // a : (x - b) = c
+    label: 'Деление · неизвестное в делителе (−)',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const c = rnd(2, max === 1000 ? 3 : 9); 
+      const diffMax = Math.floor(max / c);
+      if (diffMax < min) return null;
+      const diff = rnd(min, diffMax); 
+      const b = rnd(Math.floor(min/2), diff);
+      const x = diff + b;
+      const a = c * diff; 
+      return {x, a, b, c}; 
+    },
+    display:p=>`${p.a} : (${XU} − ${p.b}) = ${p.c}`,
+    check:p=>`${p.a} : (${p.x} − ${p.b}) = ${p.a} : ${p.x-p.b} = ${p.c}`,
+    steps(p){
+      const brVal = p.x - p.b;
+      return [
+        { stage:'Этап 1', html:`${T(p.a,'делимое')} : ${BR(`x − ${p.b}`,'делитель')} = ${T(p.c,'частное')}`,
+          rule:'Скобка — это <b>делитель</b>. Чтобы найти делитель, нужно делимое разделить на частное.' },
+        { html:`${BR(`x − ${p.b}`,'делитель')} = ${T(p.a,'делимое')} : ${T(p.c,'частное')}`, rule:'Вычисляем значение скобки.' },
+        { html:`x − ${p.b} = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T('x','уменьшаемое')} − ${T(p.b,'вычитаемое')} = ${T(brVal,'разность')}`,
+          rule:'Неизвестно <b>уменьшаемое</b>. Чтобы найти уменьшаемое, нужно к разности прибавить вычитаемое.' },
+        { html:`x = ${T(brVal,'разность')} + ${T(p.b,'вычитаемое')}`, rule:'К разности прибавляем вычитаемое.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  },
+  9: { // a : (b - x) = c
+    label: 'Деление · неизвестное в делителе (b-x)',
+    gen(max){ 
+      const min = max === 1000 ? 101 : (max === 100 ? 11 : 1);
+      const c = rnd(2, max === 1000 ? 3 : 9); 
+      const diffMax = Math.floor(max / c);
+      if (diffMax < min) return null;
+      const diff = rnd(min, diffMax); 
+      const x = rnd(Math.floor(min/2), diff);
+      const b = diff + x;
+      const a = c * diff; 
+      return {x, a, b, c}; 
+    },
+    display:p=>`${p.a} : (${p.b} − ${XU}) = ${p.c}`,
+    check:p=>`${p.a} : (${p.b} − ${p.x}) = ${p.a} : ${p.b-p.x} = ${p.c}`,
+    steps(p){
+      const brVal = p.b - p.x;
+      return [
+        { stage:'Этап 1', html:`${T(p.a,'делимое')} : ${BR(`${p.b} − x`,'делитель')} = ${T(p.c,'частное')}`,
+          rule:'Скобка — это <b>делитель</b>. Чтобы найти делитель, нужно делимое разделить на частное.' },
+        { html:`${BR(`${p.b} − x`,'делитель')} = ${T(p.a,'делимое')} : ${T(p.c,'частное')}`, rule:'Вычисляем значение скобки.' },
+        { html:`${p.b} − x = ${brVal}`, rule:'Переходим к уравнению внутри скобки.' },
+        { stage:'Этап 2', html:`${T(p.b,'уменьшаемое')} − ${T('x','вычитаемое')} = ${T(brVal,'разность')}`,
+          rule:'Неизвестно <b>вычитаемое</b>. Чтобы найти вычитаемое, нужно из уменьшаемого вычесть разность.' },
+        { html:`x = ${T(p.b,'уменьшаемое')} − ${T(brVal,'разность')}`, rule:'Из уменьшаемого вычитаем разность.' },
+        { html:`x = ${GREEN(p.x)}`, rule:'' }
+      ];
+    }
+  }
+};
+
+/* ================================================================
+   5. ГЕНЕРАЦИЯ И ОТОБРАЖЕНИЕ
+   ================================================================ */
+function tryGen(fn, max){ for(let i=0;i<200;i++){ const r=fn(max); if(r && r.x > 0 && r.c <= max) return r; } return null; }
+
+function newEquation(){
+  const keys = Object.keys(TYPES);
+  const typeId = keys[Math.floor(Math.random()*keys.length)];
+  const t = TYPES[typeId];
+  const p = tryGen(t.gen, currentMax);
+  
+  if(!p){ newEquation(); return; }
+
+  current = { typeId, t, p, solved:false, solutionViewed:false };
+
+  eqEl.innerHTML = t.display(p);
+  badgeEl.textContent = t.label;
+  fbEl.textContent = ''; fbEl.className = 'feedback';
+  inputEl.value = ''; inputEl.disabled = false;
+  $('checkBtn').disabled = false; $('solveBtn').disabled = false;
+  wrongCount = 0;
+  stepsPanel.classList.add('hidden');
+  warningBanner.classList.add('hidden');
+  stepsList.innerHTML = ''; stepsFooter.innerHTML = '';
+  inputEl.focus();
+}
+
+function renderSteps(){
+  if(!current) return;
+  const steps = current.t.steps(current.p);
+  stepsList.innerHTML = '';
+  steps.forEach((s,i)=>{
+    const card = document.createElement('div');
+    card.className = 'step-card';
+    card.style.animationDelay = (i*0.14)+'s';
+    card.innerHTML = `
+      ${s.stage?`<div class="stage">${s.stage}</div>`:''}
+      <div class="eq small" style="padding:10px 0;">${s.html}</div>
+      ${s.rule?`<div class="rule">${s.rule}</div>`:''}`;
+    stepsList.appendChild(card);
+  });
+  
+  const chk = document.createElement('div');
+  chk.className = 'step-card check';
+  chk.style.animationDelay = (steps.length*0.14)+'s';
+  chk.innerHTML = `<div class="check-text">✅ Проверка: ${current.t.check(current.p)} — верно!</div>`;
+  stepsList.appendChild(chk);
+
+  stepsFooter.innerHTML = '';
+  const btn = document.createElement('button');
+  btn.className = 'btn primary';
+  btn.textContent = '✨ Решить новое';
+  btn.onclick = () => { newEquation(); };
+  stepsFooter.appendChild(btn);
+
+  stepsPanel.classList.remove('hidden');
+  setTimeout(()=>stepsPanel.scrollIntoView({behavior:'smooth',block:'nearest'}),200);
+}
+
+/* ================================================================
+   6. ПРОВЕРКА ОТВЕТА
+   ================================================================ */
+async function checkAnswer(){
+  if(!current) return;
+  if(current.solutionViewed) return;
+  
+  const val = inputEl.value.trim();
+  if(val === ''){ fbEl.textContent = 'Введи число, юный маг ✨'; fbEl.className = 'feedback bad'; return; }
+  const num = parseInt(val, 10);
+
+  if(num === current.p.x){
+    streak++; score += 10;
+    fbEl.textContent = PRAISE[Math.floor(Math.random()*PRAISE.length)];
+    fbEl.className = 'feedback ok';
+    showToast('Верно! ✨');
+    burstConfetti();
+    magicSound();
+
+    if (Store.mode === 'cloud' && studentNick !== 'Ученик') {
+      Store.saveAttempt({
+        nick: studentNick, timestamp: Date.now(), 
+        equation: eqEl.textContent.replace(/\s+/g, ' ').trim(), 
+        type: 'eq_mul_div_' + current.typeId, max: currentMax,
+        subject: 'equations_mul_div', correct: true, answer: num, correctAnswer: current.p.x
+      });
+    }
+
+    current.solved = true;
+    inputEl.disabled = true; $('checkBtn').disabled = true; $('solveBtn').disabled = true;
+    renderSteps();
+  } else {
+    streak = 0;
+    fbEl.textContent = WRONG_MSG[Math.floor(Math.random()*WRONG_MSG.length)];
+    fbEl.className = 'feedback bad';
+    inputEl.classList.add('shake');
+    setTimeout(()=>inputEl.classList.remove('shake'),450);
+    
+    if (Store.mode === 'cloud' && studentNick !== 'Ученик') {
+      Store.saveAttempt({
+        nick: studentNick, timestamp: Date.now(), 
+        equation: eqEl.textContent.replace(/\s+/g, ' ').trim(), 
+        type: 'eq_mul_div_' + current.typeId, max: currentMax,
+        subject: 'equations_mul_div', correct: false, answer: num, correctAnswer: current.p.x
+      });
+    }
+
+    wrongCount++;
+    if(wrongCount === 1) {
+      fbEl.textContent += '  Подсказка: рассмотри скобку как единое целое.';
+    }
+    if(wrongCount >= 2){
+      fbEl.textContent += '  Смотри пошаговый разбор ниже 👇';
+      current.solutionViewed = true;
+      inputEl.disabled = true; $('checkBtn').disabled = true;
+      warningBanner.innerHTML = '⚠️ Это уравнение засчитано как учебное — сейчас появится новое, чтобы ты применил(а) правило сам(а) 🪄';
+      warningBanner.classList.remove('hidden');
+      renderSteps();
+    }
+  }
+  updateStats();
+}
+
+function updateStats(){
+  $('streak').textContent = streak;
+  $('score').textContent = score;
+}
+
+/* ================================================================
+   7. ЭФФЕКТЫ
+   ================================================================ */
+function showToast(msg){
+  const t = $('toast'); t.textContent = msg; t.classList.add('show');
+  clearTimeout(showToast._t); showToast._t = setTimeout(() => t.classList.remove('show'), 2000);
+}
+function burstConfetti(){
+  if (typeof confetti !== 'function') return;
+  confetti({ particleCount: 90, spread: 80, origin: {y: .65}, colors: ['#ffcf5c','#2ee6d6','#ff4fd8','#a6ff4d'], scalar: 1.1 });
+}
+function magicSound(){
+  try {
+    const AC = window.AudioContext || window.webkitAudioContext;
+    if (!AC) return;
+    const ctx = new AC(), now = ctx.currentTime;
+    [660, 990].forEach((f, i) => {
+      const o = ctx.createOscillator(), g = ctx.createGain();
+      o.type = 'triangle'; o.frequency.value = f;
+      const t0 = now + i*0.12;
+      g.gain.setValueAtTime(0, t0);
+      g.gain.linearRampToValueAtTime(0.15, t0+0.02);
+      g.gain.exponentialRampToValueAtTime(0.001, t0+0.28);
+      o.connect(g); g.connect(ctx.destination);
+      o.start(t0); o.stop(t0+0.32);
+    });
+    setTimeout(() => ctx.close(), 900);
+  } catch(e){}
+}
+
+/* ================================================================
+   8. СОБЫТИЯ
+   ================================================================ */
+document.querySelectorAll('.menu-card').forEach(card => {
+  card.addEventListener('click', () => {
+    currentMax = parseInt(card.dataset.max, 10);
+    $('menuScreen').classList.add('hidden');
+    $('taskScreen').classList.remove('hidden');
+    $('headerTitle').textContent = 'Уравнения (до ' + currentMax + ')';
+    newEquation();
+  });
+});
+
+$('backToMenuBtn').addEventListener('click', () => {
+  $('taskScreen').classList.add('hidden');
+  $('menuScreen').classList.remove('hidden');
+});
+
+$('checkBtn').addEventListener('click', checkAnswer);
+inputEl.addEventListener('keydown', e => { if(e.key === 'Enter') checkAnswer(); });
+$('newBtn').addEventListener('click', newEquation);
+$('solveBtn').addEventListener('click', () => {
+  if(!current || current.solutionViewed) return;
+  current.solutionViewed = true;
+  inputEl.disabled = true; $('checkBtn').disabled = true; $('solveBtn').disabled = true;
+  warningBanner.innerHTML = '⚠️ Ты посмотрел(а) решение. Это уравнение засчитано как учебное — сейчас появится новое 🪄';
+  warningBanner.classList.remove('hidden');
+  renderSteps();
+  
+  if (Store.mode === 'cloud' && studentNick !== 'Ученик') {
+    Store.saveAttempt({
+      nick: studentNick, timestamp: Date.now(), 
+      equation: eqEl.textContent.replace(/\s+/g, ' ').trim(), 
+      type: 'eq_mul_div_' + current.typeId, max: currentMax,
+      subject: 'equations_mul_div', correct: false, solutionViewed: true, answer: null, correctAnswer: current.p.x
+    });
+  }
+});
+
+// СТАРТ
+(async function init(){
+  await Store.init();
+  updateStats();
+})();
+</script>
+</body>
+</html>
